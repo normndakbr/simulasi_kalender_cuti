@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Kalender Jadwal Kerja 6-2</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+      }
+
+      body {
+        background: #f5f5f5;
+        margin: 0;
+        padding: 20px;
+        display: flex;
+        justify-content: center;
+      }
+
+      .app {
+        background: #ffffff;
+        padding: 20px 24px 24px;
+        border-radius: 16px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+        max-width: 800px;
+        width: 100%;
+      }
+
+      h1 {
+        margin-top: 0;
+        font-size: 1.3rem;
+        margin-bottom: 12px;
+      }
+
+      .description {
+        font-size: 0.9rem;
+        color: #555;
+        margin-bottom: 16px;
+      }
+
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px 24px;
+        align-items: center;
+        margin-bottom: 16px;
+        font-size: 0.9rem;
+      }
+
+      .controls label {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .controls input[type="date"],
+      .controls input[type="number"] {
+        padding: 6px 8px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        font-size: 0.9rem;
+        min-width: 160px;
+      }
+
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 16px;
+        font-size: 0.8rem;
+        margin-bottom: 10px;
+        align-items: center;
+      }
+
+      .legend-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .legend-color {
+        width: 14px;
+        height: 14px;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+      }
+
+      .legend-work {
+        background: #e0f4ff;
+      }
+      .legend-leave {
+        background: #ffe9e0;
+      }
+      .legend-today {
+        background: #e8ffe0;
+      }
+
+      .calendar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+        margin-top: 8px;
+      }
+
+      .calendar-header h2 {
+        margin: 0;
+        font-size: 1.1rem;
+      }
+
+      .calendar-nav {
+        display: flex;
+        gap: 6px;
+      }
+
+      .calendar-nav button {
+        border: 1px solid #ccc;
+        background: #fff;
+        border-radius: 999px;
+        padding: 4px 10px;
+        cursor: pointer;
+        font-size: 0.8rem;
+      }
+
+      .calendar-nav button:hover {
+        background: #f0f0f0;
+      }
+
+      .calendar {
+        border-radius: 12px;
+        border: 1px solid #e2e2e2;
+        overflow: hidden;
+        background: #fafafa;
+      }
+
+      .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        border-top: 1px solid #e2e2e2;
+      }
+
+      .day-name,
+      .day-cell {
+        padding: 6px 4px;
+        text-align: center;
+        font-size: 0.8rem;
+      }
+
+      .day-name {
+        background: #f0f0f0;
+        font-weight: 600;
+        border-bottom: 1px solid #e2e2e2;
+      }
+
+      .day-cell {
+        min-height: 60px;
+        border-bottom: 1px solid #f0f0f0;
+        border-right: 1px solid #f0f0f0;
+        position: relative;
+        background: #fff;
+      }
+
+      .day-cell:nth-child(7n) {
+        border-right: none;
+      }
+
+      .day-number {
+        position: absolute;
+        top: 4px;
+        right: 6px;
+        font-size: 0.75rem;
+        color: #555;
+      }
+
+      .badge {
+        position: absolute;
+        left: 6px;
+        bottom: 6px;
+        font-size: 0.7rem;
+        padding: 2px 6px;
+        border-radius: 999px;
+      }
+
+      .work-day {
+        background: #e0f4ff;
+      }
+
+      .work-day .badge {
+        background: #0077ff;
+        color: #fff;
+      }
+
+      .leave-day {
+        background: #ffe9e0;
+      }
+
+      .leave-day .badge {
+        background: #ff6a3d;
+        color: #fff;
+      }
+
+      .today {
+        outline: 2px solid #5ac24f;
+        outline-offset: -2px;
+      }
+
+      .no-schedule {
+        background: #fff;
+      }
+
+      .no-schedule .badge {
+        display: none;
+      }
+
+      @media (max-width: 600px) {
+        .day-cell {
+          min-height: 50px;
+        }
+        .controls {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <h1>Kalender Jadwal Kerja 6 Minggu Kerja / 2 Minggu Cuti</h1>
+      <p class="description">
+        Pilih tanggal mulai pola kerja (hari pertama masuk). Sistem akan
+        menghitung pola
+        <strong>6 minggu kerja</strong> lalu
+        <strong>2 minggu cuti</strong> secara berulang.
+      </p>
+
+      <div class="controls">
+        <label>
+          Tanggal mulai pola (awal minggu kerja)
+          <input type="date" id="startDate" />
+        </label>
+
+        <label>
+          Minggu kerja
+          <input type="number" id="workWeeks" min="1" value="6" />
+        </label>
+
+        <label>
+          Minggu cuti
+          <input type="number" id="leaveWeeks" min="0" value="2" />
+        </label>
+      </div>
+
+      <div class="legend">
+        <div class="legend-item">
+          <span class="legend-color legend-work"></span> Hari kerja
+        </div>
+        <div class="legend-item">
+          <span class="legend-color legend-leave"></span> Hari cuti
+        </div>
+        <div class="legend-item">
+          <span class="legend-color legend-today"></span> Hari ini
+        </div>
+      </div>
+
+      <div class="calendar-header">
+        <h2 id="monthLabel"></h2>
+        <div class="calendar-nav">
+          <button id="prevMonth">&laquo; Sebelumnya</button>
+          <button id="todayBtn">Bulan ini</button>
+          <button id="nextMonth">Berikutnya &raquo;</button>
+        </div>
+      </div>
+
+      <div class="calendar" id="calendar">
+        <div class="calendar-grid" id="calendarGridHeader"></div>
+        <div class="calendar-grid" id="calendarGridBody"></div>
+      </div>
+    </div>
+
+    <script>
+      // --- Utility date functions ---
+      function toMidnight(date) {
+        const d = new Date(date);
+        d.setHours(0, 0, 0, 0);
+        return d;
+      }
+
+      function diffInDays(a, b) {
+        const msPerDay = 24 * 60 * 60 * 1000;
+        return Math.floor((toMidnight(a) - toMidnight(b)) / msPerDay);
+      }
+
+      // --- State ---
+      const today = toMidnight(new Date());
+      let currentYear = today.getFullYear();
+      let currentMonth = today.getMonth(); // 0-11
+
+      const startDateInput = document.getElementById("startDate");
+      const workWeeksInput = document.getElementById("workWeeks");
+      const leaveWeeksInput = document.getElementById("leaveWeeks");
+      const monthLabel = document.getElementById("monthLabel");
+      const calendarGridHeader = document.getElementById("calendarGridHeader");
+      const calendarGridBody = document.getElementById("calendarGridBody");
+
+      // Set default start date = hari ini
+      (function initStartDate() {
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, "0");
+        const dd = String(today.getDate()).padStart(2, "0");
+        startDateInput.value = `${yyyy}-${mm}-${dd}`;
+      })();
+
+      // --- Calendar header (day names, Senin pertama) ---
+      const dayNames = ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"];
+      function renderDayNames() {
+        calendarGridHeader.innerHTML = "";
+        dayNames.forEach((name) => {
+          const div = document.createElement("div");
+          div.className = "day-name";
+          div.textContent = name;
+          calendarGridHeader.appendChild(div);
+        });
+      }
+
+      // --- Determine work/leave status ---
+      function getDayStatus(date) {
+        const startDateValue = startDateInput.value;
+        const workWeeks = parseInt(workWeeksInput.value, 10) || 0;
+        const leaveWeeks = parseInt(leaveWeeksInput.value, 10) || 0;
+
+        if (!startDateValue || workWeeks <= 0 || workWeeks + leaveWeeks <= 0) {
+          return "no-schedule";
+        }
+
+        const startDate = toMidnight(new Date(startDateValue));
+        const diffDays = diffInDays(date, startDate);
+
+        // Hitung berdasarkan minggu, bukan hari
+        const weekIndexRaw = Math.floor(diffDays / 7);
+        const cycleLength = workWeeks + leaveWeeks;
+
+        // Tangani tanggal sebelum start date (boleh mundur)
+        let weekIndexMod = weekIndexRaw % cycleLength;
+        if (weekIndexMod < 0) {
+          weekIndexMod += cycleLength;
+        }
+
+        if (weekIndexMod < workWeeks) {
+          return "work-day";
+        } else {
+          return "leave-day";
+        }
+      }
+
+      // --- Render calendar body ---
+      function renderCalendar(year, month) {
+        // Label bulan
+        const monthNames = [
+          "Januari",
+          "Februari",
+          "Maret",
+          "April",
+          "Mei",
+          "Juni",
+          "Juli",
+          "Agustus",
+          "September",
+          "Oktober",
+          "November",
+          "Desember",
+        ];
+        monthLabel.textContent = `${monthNames[month]} ${year}`;
+
+        calendarGridBody.innerHTML = "";
+
+        const firstDayOfMonth = new Date(year, month, 1);
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        // getDay() : 0 (Min) - 6 (Sab)
+        // Kita mau Senin sebagai kolom pertama:
+        let startIndex = (firstDayOfMonth.getDay() + 6) % 7; // 0=Sen,6=Min
+
+        // Isi sel kosong sebelum tanggal 1
+        for (let i = 0; i < startIndex; i++) {
+          const emptyCell = document.createElement("div");
+          emptyCell.className = "day-cell no-schedule";
+          calendarGridBody.appendChild(emptyCell);
+        }
+
+        // Isi tanggal-tanggal
+        for (let day = 1; day <= daysInMonth; day++) {
+          const cellDate = new Date(year, month, day);
+          const status = getDayStatus(cellDate);
+
+          const cell = document.createElement("div");
+          cell.className = `day-cell ${status}`;
+
+          if (toMidnight(cellDate).getTime() === today.getTime()) {
+            cell.classList.add("today");
+          }
+
+          const numberSpan = document.createElement("span");
+          numberSpan.className = "day-number";
+          numberSpan.textContent = day;
+          cell.appendChild(numberSpan);
+
+          const badge = document.createElement("span");
+          badge.className = "badge";
+
+          if (status === "work-day") {
+            badge.textContent = "Kerja";
+          } else if (status === "leave-day") {
+            badge.textContent = "Cuti";
+          } else {
+            badge.textContent = "";
+          }
+
+          cell.appendChild(badge);
+          calendarGridBody.appendChild(cell);
+        }
+      }
+
+      // --- Navigation ---
+      document.getElementById("prevMonth").addEventListener("click", () => {
+        currentMonth--;
+        if (currentMonth < 0) {
+          currentMonth = 11;
+          currentYear--;
+        }
+        renderCalendar(currentYear, currentMonth);
+      });
+
+      document.getElementById("nextMonth").addEventListener("click", () => {
+        currentMonth++;
+        if (currentMonth > 11) {
+          currentMonth = 0;
+          currentYear++;
+        }
+        renderCalendar(currentYear, currentMonth);
+      });
+
+      document.getElementById("todayBtn").addEventListener("click", () => {
+        currentYear = today.getFullYear();
+        currentMonth = today.getMonth();
+        renderCalendar(currentYear, currentMonth);
+      });
+
+      // Update saat input berubah
+      startDateInput.addEventListener("change", () =>
+        renderCalendar(currentYear, currentMonth)
+      );
+      workWeeksInput.addEventListener("input", () =>
+        renderCalendar(currentYear, currentMonth)
+      );
+      leaveWeeksInput.addEventListener("input", () =>
+        renderCalendar(currentYear, currentMonth)
+      );
+
+      // --- Init ---
+      renderDayNames();
+      renderCalendar(currentYear, currentMonth);
+    </script>
+  </body>
+</html>
